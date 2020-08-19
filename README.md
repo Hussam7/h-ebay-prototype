@@ -1,9 +1,9 @@
 # h-ebay-prototype
 
 
-##Follow steps to run the app:
-. downloading files
-In VS code, open code folder
-open terminal
-run: npm install to download required packages
-run: npm start
+## Follow steps to run the app:
+- downloading files
+- oen folder containing the files using Visual Studio Code
+- in terminal:
+  - execute: npm install to download required packages
+  - execute: npm start
