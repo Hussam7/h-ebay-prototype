@@ -74,7 +74,7 @@
 
       <div class="row">
         <div class="col-sm ">
-            <div id="result" class="row text-capitalize text-primary font-weight-bold"></div>
+            <div id="result" class="row text-capitalize text-center text-success font-weight-bold"></div>
           <div class="col-md text-center">
             <input
               name="bid"
@@ -82,10 +82,10 @@
               type="number"
               class="inputBid"
               placeholder="Enter your bid..press enter"
-              style="width: 90%;"
+              style="width: 100%;"
             />
             <p id="timer" style="display: none;">
-              <span class="countdown"></span> seconds Left for closing
+              <span class="countdown text-primary font-weight-bold"></span> seconds Left for closing
             </p>
             <p id="note" class="text-danger">Bid Value must be higher than last bid</p>
           </div>
@@ -131,6 +131,7 @@
       var bidVal = 0;
       $(document).ready(function () {
         $(".usernameInput").focus();
+        $("#note").hide();
         $(".usernameInput").keypress(function (e) {
           var code = e.keyCode || e.which;
           if (code == 13) {
@@ -159,8 +160,7 @@
                 $("#note").hide();
             socket.emit("bid", { amount: bid });
             
-        }else{
-            alert(bidVal);
+        }else{            
             $("#note").show()
                 }
             if(firstBid){
@@ -171,7 +171,7 @@
             if(timeout){
                 $(".inputBid").attr("disabled","disabled");
                 $("#timer").html("bidding closed");
-                $("#result").html("winner with of bid "+bidVal);
+                $("#result").html("winner with higher bid ="+bidVal);
             }
           }
         });
@@ -194,14 +194,16 @@
           var seconds = parseInt(timer[1], 10);
           --seconds;
           minutes = seconds < 0 ? --minutes : minutes;
-          if (minutes < 0) clearInterval(interval);
+          if (minutes < 0) return clearInterval(interval);
           seconds = seconds < 0 ? 59 : seconds;
           seconds = seconds < 10 ? "0" + seconds : seconds;
           //minutes = (minutes < 10) ?  minutes : minutes;
           $(".countdown").html(minutes + ":" + seconds);
           timer2 = minutes + ":" + seconds;
+          
           if(minutes == 0 && seconds == 0){
               timeout = true;
+              return clearInterval(interval);
           }
         }, 1000);
 
