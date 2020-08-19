@@ -1,41 +1,39 @@
 var express = require('express');
-const session = require('express-session');
-const bodyParser= require('body-parser')
-const MongoClient = require('mongodb').MongoClient
-const path = require("path");
 var app = express();
-var sess; //sess = req.session;
-app.set('view engine', 'ejs')
-app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(__dirname))
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
+var httpd  = require('http').createServer(app);
 
-MongoClient.connect("mongodb://localhost:27017/", {
-    useUnifiedTopology: true
-  }, (err, client) => {
-    if (err) return console.error(err)
-    console.log('Connected to Database')
-    const db = client.db('ebay-db')
-    const bidHistoryCollection = db.collection('bidHistory')
+var io = require('socket.io').listen(httpd);
+app.use(express.static(__dirname+ '/public'))
+// when a client connects
+io.sockets.on('connection', function (socket) {
+    //socket.emit('login');
 
-})//end db
-     
-app.post('/login', (req, res) => {
-    sess = req.session;
-    //sess.username1 =  req.body.username; 
-    console.log('running index... ') 
-    console.log(req.body.username)  
-    
-    res.render('index.ejs', { username: req.body.username})
- })
+    socket.on('username', function(data){
+        console.log("user login")
+        console.log(data)
+        socket.username = data.username;
+        socket.emit('user-joined', {username: data.username});
+   });
+    // listen to incoming bids
+    socket.on('bid', function(content) {
+        console.log(content)
+         // echo to the sender
+         socket.emit('bid', {amount: content.amount});
+
+      // broadcast the bid to all clients
+         socket.broadcast.emit('bidAll', socket.username + 'bid: ' + content.amount);
+
+    });
+
+});
     //index
-app.get('/', (req, res) => {
-    console.log('running login... ')    
-    res.render('login.ejs', {})
- })
-  //end index
-
-  app.listen(3000, () => {
-    console.log('listening on :3000');
-  });
+    app.get('/', (req, res) => {
+        console.log('Hi!')
+        
+        res.redirect('index.html', {})
+    })
+    //end index
+// create the server
+httpd.listen(5555, function(){
+    console.log('Auction server running 5555'); 
+   });

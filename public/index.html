@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ebay Auction</title>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+      integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+      crossorigin="anonymous"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 5px;
+        width: 100%;
+        height: 100%;
+      }
+
+      .loginContainer {
+        display: visible;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        opacity: 0.92;
+        font-size: 1.5em;
+        color: white;
+        padding: 5% 0;
+      }
+      .loginContainer .loginBackground {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        color: white;
+        background-color: black;
+        text-align: center;
+      }
+
+      .loginContainer .usernameInput {
+        color: white;
+        background-color: transparent;
+        text-align: center;
+        padding-top: 8px;
+        border: none;
+        outline: none;
+        font-weight: bold;
+        font-size: 3em;
+      }
+      .bidContainer {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="loginContainer">
+      <div class="form loginBackground">
+        <h3 class="title">Ebay Auction</h3>
+        <input
+          name="usernameTxt"
+          class="usernameInput"
+          placeholder="Type Username"
+          type="text"
+          maxlength="14"
+        />
+      </div>
+    </div>
+    <div class="container bidContainer">
+      <header>
+        <h1 class="text-primary text-center">
+          Ebay Auction Simulation
+        </h1>
+      </header>
+
+      <div class="row">
+        <div class="col-sm ">
+            <div id="result" class="row text-capitalize text-primary font-weight-bold"></div>
+          <div class="col-md text-center">
+            <input
+              name="bid"
+              id="bid"
+              type="number"
+              class="inputBid"
+              placeholder="Enter your bid..press enter"
+              style="width: 90%;"
+            />
+            <p id="timer" style="display: none;">
+              <span class="countdown"></span> seconds Left for closing
+            </p>
+            <p id="note" class="text-danger">Bid Value must be higher than last bid</p>
+          </div>
+          <br /><br />
+          <div id="bids" class="row">
+            <ul id="bidsHistory"></ul>
+          </div>
+        </div>
+        <div class="col-sm">
+          <div class="col-md">
+            <div class="card">
+              <img
+                src="https://i.pcmag.com/imagery/reviews/06IqvjpwXgLJ8XUJeTgaQ6u-41.fit_lpad.size_238x139.v_1574731211.jpg"
+                class="card-img-top"
+                alt="camera"
+              />
+              <div class="card-body">
+                <h5 class="card-title">Fujifilm X-T30</h5>
+                <p class="card-text">
+                  The Fujifilm X-T30's dial-based controls are appealing to
+                  enthusiasts and pros, and it backs them up with speedy,
+                  accurate focus, 4K video, and a strong lens library.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+       
+      </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script>
+      var socket = io();
+      var timeout = false;
+      var firstBid = true;
+      var bidVal = 0;
+      $(document).ready(function () {
+        $(".usernameInput").focus();
+        $(".usernameInput").keypress(function (e) {
+          var code = e.keyCode || e.which;
+          if (code == 13) {
+            // Enter pressed
+            var str = $(".usernameInput").val();
+            $(".loginContainer").hide();
+            $(".bidContainer").show();
+            $(".inputBid").focus();
+            socket.emit("username", { username: str });
+          }
+        });
+
+        ///============
+        //--bidding
+        $(".inputBid").keypress(function (e) {
+            $("#timer").show();
+          var code = e.keyCode || e.which;
+          if (code == 13) {
+            // Enter pressed
+            var bid = $(".inputBid").val();
+            
+            
+            
+            if(bidVal < parseInt(bid)){
+                bidVal = bid;
+                $("#note").hide();
+            socket.emit("bid", { amount: bid });
+            
+        }else{
+            alert(bidVal);
+            $("#note").show()
+                }
+            if(firstBid){
+                setTimer();
+                firstBid = false;
+            }
+            
+            if(timeout){
+                $(".inputBid").attr("disabled","disabled");
+                $("#timer").html("bidding closed");
+                $("#result").html("winner with of bid "+bidVal);
+            }
+          }
+        });
+
+        socket.on("user-joined", function (data) {
+          $("#bidsHistory").append("<li>" + data.username + " 's Bidding</li>");
+        });
+
+        socket.on("bid", function (data) {
+          $("#bidsHistory").append("<li>" + data.amount + "</li>");
+        });
+      });
+
+      function setTimer() {
+        var timer2 = "2:01";
+        var interval = setInterval(function () {
+          var timer = timer2.split(":");
+          //by parsing integer, I avoid all extra string processing
+          var minutes = parseInt(timer[0], 10);
+          var seconds = parseInt(timer[1], 10);
+          --seconds;
+          minutes = seconds < 0 ? --minutes : minutes;
+          if (minutes < 0) clearInterval(interval);
+          seconds = seconds < 0 ? 59 : seconds;
+          seconds = seconds < 10 ? "0" + seconds : seconds;
+          //minutes = (minutes < 10) ?  minutes : minutes;
+          $(".countdown").html(minutes + ":" + seconds);
+          timer2 = minutes + ":" + seconds;
+          if(minutes == 0 && seconds == 0){
+              timeout = true;
+          }
+        }, 1000);
+
+      }
+    </script>
+  </body>
+</html>
